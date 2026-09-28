@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>🐻 台灣黑熊過街 | Formosan Bear Crossing (Canvas Pixel)</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="game-wrapper">
+    <div class="game-title">🐻 台灣黑熊過街 — Pixel Arcade 🐻</div>
+
+    <!-- ===== HUD ===== -->
+    <div id="hud">
+      <div class="hud-group">
+        <span class="hud-item">
+          <span class="hud-label">生命</span>
+          <span id="lives-display" class="hud-value">❤️❤️❤️</span>
+        </span>
+        <span class="hud-item">
+          <span class="hud-label">分數</span>
+          <span id="score-display" class="hud-value">0</span>
+        </span>
+      </div>
+      <div class="hud-group">
+        <span class="hud-item">
+          <span class="hud-label">關卡</span>
+          <span id="level-display" class="hud-value">1</span>
+        </span>
+        <span class="hud-item">
+          <span class="hud-label">最高</span>
+          <span id="highscore-display" class="hud-value high-score">0</span>
+        </span>
+        <button id="mute-btn" class="icon-btn" title="切換靜音" aria-label="切換靜音">🔊</button>
+      </div>
+    </div>
+
+    <!-- ===== Canvas Container ===== -->
+    <div id="canvas-container">
+      <canvas id="game-canvas" width="700" height="550"></canvas>
+
+      <!-- ===== Start Screen Overlay ===== -->
+      <div class="overlay" id="start-screen">
+        <h2>🐻 台灣黑熊過街</h2>
+        <div class="bear-preview-box">
+          <canvas id="preview-bear-canvas" width="64" height="64"></canvas>
+        </div>
+        <p style="font-size: 1.15rem; color: #f1f5f9; font-weight: 500;">
+          幫助台灣黑熊避開台灣在地車輛、採集竹筍與蜂蜜，平安渡河回竹林！
+        </p>
+        <div class="instructions-box">
+          <p>🎮 <b>移動</b>：<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> 或 <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>（手機支援滑動與按鈕）</p>
+          <p>🛵 <b>馬路</b>：小心機車、公車、計程車與定時停駛之紅綠燈</p>
+          <p>🪵 <b>河流</b>：跳上浮木與烏龜渡河，小心烏龜隨時會下潛！</p>
+          <p>🎋 <b>道具</b>：採集竹筍加速、拾取蜂蜜獲得護盾抵擋 1 次傷害</p>
+          <p>🏠 <b>目標</b>：填滿頂部 5 個竹林家園即可晉級下一主題場景</p>
+        </div>
+        <div class="btn-group">
+          <button class="btn" id="start-btn">🎮 開始遊戲</button>
+        </div>
+        <p style="margin-top: 10px; font-size: 0.85rem; color: #94a3b8;">
+          按 <kbd>Space</kbd> 或 <kbd>Enter</kbd> 快速開局
+        </p>
+      </div>
+
+      <!-- ===== Level Complete Overlay ===== -->
+      <div class="overlay hidden" id="win-screen">
+        <h2>🎉 關卡完成！</h2>
+        <p>場景 <span id="cleared-level" class="highlight">1</span> 通關成功！</p>
+        <p>目前累計得分</p>
+        <p class="highlight" id="win-score">0</p>
+        <div class="btn-group">
+          <button class="btn" id="next-level-btn">➡️ 前往下一關</button>
+        </div>
+      </div>
+
+      <!-- ===== Game Over Overlay ===== -->
+      <div class="overlay hidden" id="gameover-screen">
+        <h2>💀 遊戲結束</h2>
+        <p>最終得分</p>
+        <p class="highlight" id="final-score">0</p>
+        <p id="new-highscore-badge" style="color: #e94560; font-weight: bold; display: none;">🏆 榮獲新紀錄！</p>
+        <div class="btn-group">
+          <button class="btn" id="restart-btn">🔄 再玩一次</button>
+          <button class="btn btn-secondary" id="share-btn">📋 複製戰績</button>
+        </div>
+        <div id="copy-toast" class="toast">已複製戰績到剪貼簿！✨</div>
+      </div>
+    </div>
+
+    <!-- ===== Mobile Virtual Controls ===== -->
+    <div id="mobile-controls">
+      <div></div>
+      <button class="d-btn" id="btn-up" aria-label="向上">⬆</button>
+      <div></div>
+      <button class="d-btn" id="btn-left" aria-label="向左">⬅</button>
+      <button class="d-btn" id="btn-down" aria-label="向下">⬇</button>
+      <button class="d-btn" id="btn-right" aria-label="向右">➡</button>
+    </div>
+  </div>
+
+  <!-- ===== Game Modules ===== -->
+  <script src="js/audio.js"></script>
+  <script src="js/sprites.js"></script>
+  <script src="js/tilemap.js"></script>
+  <script src="js/entities.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>

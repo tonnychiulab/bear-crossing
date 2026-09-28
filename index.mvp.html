@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>🐻 台灣黑熊過街 | Bear Crossing</title>
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  <style>
+    /* ===== Reset & Base ===== */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0a0e1a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: 'Segoe UI', 'Noto Sans TC', system-ui, sans-serif;
+      color: #fff;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    #game-wrapper {
+      text-align: center;
+      position: relative;
+    }
+
+    .game-title {
+      font-size: 1.6rem;
+      margin-bottom: 6px;
+      letter-spacing: 2px;
+      text-shadow: 0 0 12px rgba(76, 175, 80, 0.6);
+    }
+
+    /* ===== HUD ===== */
+    #hud {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 16px;
+      background: linear-gradient(135deg, #16213e, #1a1a2e);
+      border-radius: 10px 10px 0 0;
+      width: 700px;
+      font-size: 1rem;
+      border: 2px solid #0f3460;
+      border-bottom: none;
+    }
+
+    #hud span { display: flex; align-items: center; gap: 6px; }
+    .hud-label { color: #888; font-size: 0.85rem; }
+    .hud-value { font-weight: bold; color: #ffd700; font-size: 1.1rem; }
+    .high-score { color: #e94560; }
+
+    /* ===== Game Board ===== */
+    #game-board {
+      position: relative;
+      width: 700px;
+      height: 550px;
+      overflow: hidden;
+      border: 2px solid #0f3460;
+      border-radius: 0 0 10px 10px;
+      background: #222;
+    }
+
+    /* ===== Lanes ===== */
+    .lane {
+      position: absolute;
+      width: 100%;
+      height: 50px;
+      left: 0;
+    }
+
+    .lane-goal {
+      background: linear-gradient(180deg, #1a3a15, #2a5a22);
+    }
+
+    .lane-water {
+      background: linear-gradient(180deg, #0d4f6e, #1a6985);
+      overflow: hidden;
+    }
+
+    /* Water ripple animation */
+    .lane-water::after {
+      content: '';
+      position: absolute;
+      width: 200%;
+      height: 100%;
+      top: 0; left: 0;
+      background: repeating-linear-gradient(
+        90deg,
+        transparent 0, transparent 30px,
+        rgba(255,255,255,0.04) 30px, rgba(255,255,255,0.04) 60px
+      );
+      animation: waterFlow 3s linear infinite;
+    }
+
+    @keyframes waterFlow {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+
+    .lane-safe {
+      background: linear-gradient(180deg, #3a6b2f, #4a8c3f);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .lane-safe::after {
+      content: '🌿 🎋 🌿 🎍 🌿 🎋 🌿 🎍 🌿 🎋 🌿 🎍 🌿';
+      font-size: 1.2rem;
+      opacity: 0.5;
+      letter-spacing: 4px;
+    }
+
+    .lane-road {
+      background: #3a3a3a;
+    }
+
+    .lane-road-line {
+      position: absolute;
+      width: 100%;
+      height: 2px;
+      bottom: 0;
+      background: repeating-linear-gradient(
+        90deg,
+        #ffeb3b 0, #ffeb3b 30px,
+        transparent 30px, transparent 60px
+      );
+      opacity: 0.35;
+    }
+
+    .lane-start {
+      background: linear-gradient(180deg, #3a6b35, #2a5525);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .lane-start::after {
+      content: '🌲 🌳 🌲 🌿 🌲 🌳 🌲 🌿 🌲 🌳 🌲 🌿 🌲';
+      font-size: 1.2rem;
+      opacity: 0.5;
+      letter-spacing: 2px;
+    }
+
+    /* ===== Goal Homes ===== */
+    .goal-home {
+      position: absolute;
+      width: 66px;
+      height: 42px;
+      top: 4px;
+      background: rgba(20, 60, 20, 0.9);
+      border: 2px solid #3a8a35;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      z-index: 10;
+      transition: all 0.3s;
+    }
+
+    .goal-home.filled {
+      background: #3a8a35;
+      box-shadow: 0 0 12px rgba(76, 175, 80, 0.6);
+      border-color: #66bb6a;
+    }
+
+    .goal-home .home-label {
+      font-size: 0.65rem;
+      color: #8a8;
+      position: absolute;
+      bottom: 2px;
+    }
+
+    .goal-home.filled .home-label { display: none; }
+
+    /* ===== Obstacles ===== */
+    .obstacle {
+      position: absolute;
+      height: 38px;
+      top: 6px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      letter-spacing: 2px;
+      will-change: transform;
+      z-index: 5;
+    }
+
+    .obs-log {
+      background: linear-gradient(180deg, #8B6914, #6B4E12);
+      border: 2px solid #5a3e0e;
+      box-shadow: inset 0 -3px 6px rgba(0,0,0,0.3);
+    }
+
+    .obs-turtle {
+      background: linear-gradient(180deg, #2E8B57, #1a6b3a);
+      border: 2px solid #1a5a30;
+    }
+
+    .obs-scooter {
+      background: linear-gradient(180deg, #78909C, #546E7A);
+      border: 2px solid #455A64;
+    }
+
+    .obs-car {
+      background: linear-gradient(180deg, #e53935, #c62828);
+      border: 2px solid #b71c1c;
+    }
+
+    .obs-moto {
+      background: linear-gradient(180deg, #FF6F00, #E65100);
+      border: 2px solid #BF360C;
+    }
+
+    .obs-bus {
+      background: linear-gradient(180deg, #FDD835, #F9A825);
+      border: 2px solid #F57F17;
+    }
+
+    .obs-taxi {
+      background: linear-gradient(180deg, #FFD54F, #FFB300);
+      border: 2px solid #FF8F00;
+    }
+
+    /* ===== Player (Bear) ===== */
+    #player {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      z-index: 50;
+      will-change: transform;
+      transition: none;
+    }
+
+    #player.moving {
+      transition: transform 0.1s ease-out;
+    }
+
+    #player.dying .bear-inner {
+      animation: deathSpin 0.6s ease-out forwards;
+    }
+
+    @keyframes deathSpin {
+      0%   { transform: scale(1) rotate(0deg); opacity: 1; filter: brightness(1); }
+      30%  { transform: scale(1.3) rotate(90deg); opacity: 0.8; filter: brightness(3); }
+      60%  { transform: scale(0.5) rotate(540deg); opacity: 0.5; }
+      100% { transform: scale(0) rotate(1080deg); opacity: 0; }
+    }
+
+    .bear-inner {
+      width: 40px;
+      height: 40px;
+      position: relative;
+    }
+
+    @keyframes hop {
+      0%, 100% { transform: scale(1) translateY(0); }
+      50% { transform: scale(1.15) translateY(-4px); }
+    }
+
+    #player.hop .bear-inner {
+      animation: hop 0.15s ease-out;
+    }
+
+    /* ===== Overlays ===== */
+    .overlay {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(5, 8, 20, 0.92);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      backdrop-filter: blur(4px);
+    }
+
+    .overlay.hidden { display: none; }
+
+    .overlay h2 {
+      font-size: 2.2rem;
+      margin-bottom: 12px;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+    }
+
+    .overlay p {
+      font-size: 1.05rem;
+      margin: 4px 0;
+      color: #ccc;
+    }
+
+    .overlay .highlight { color: #ffd700; font-weight: bold; font-size: 1.3rem; }
+
+    .btn {
+      margin-top: 18px;
+      padding: 14px 36px;
+      font-size: 1.15rem;
+      font-weight: bold;
+      background: linear-gradient(135deg, #e94560, #c62828);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      letter-spacing: 1px;
+      box-shadow: 0 4px 15px rgba(233, 69, 96, 0.4);
+    }
+
+    .btn:hover { transform: scale(1.06); box-shadow: 0 6px 20px rgba(233, 69, 96, 0.6); }
+    .btn:active { transform: scale(0.97); }
+
+    .instructions {
+      background: rgba(255,255,255,0.05);
+      border-radius: 10px;
+      padding: 14px 24px;
+      margin: 12px 0;
+      text-align: left;
+      line-height: 1.8;
+    }
+
+    .instructions kbd {
+      background: #333;
+      border: 1px solid #555;
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 0.9rem;
+    }
+
+    .bear-showcase {
+      font-size: 3rem;
+      margin: 8px 0;
+    }
+
+    /* ===== Mobile Controls ===== */
+    #mobile-controls {
+      display: none;
+      grid-template-columns: repeat(3, 64px);
+      grid-template-rows: repeat(2, 64px);
+      gap: 6px;
+      justify-content: center;
+      margin-top: 10px;
+    }
+
+    .d-btn {
+      width: 64px;
+      height: 64px;
+      font-size: 1.8rem;
+      background: linear-gradient(135deg, #1a2744, #16213e);
+      border: 2px solid #0f3460;
+      color: white;
+      border-radius: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.1s;
+    }
+
+    .d-btn:active { background: #0f3460; }
+
+    @media (max-width: 750px) {
+      #game-board, #hud { width: 100vw; }
+      #mobile-controls { display: grid; }
+      .game-title { font-size: 1.2rem; }
+    }
+
+    /* ===== Screen shake ===== */
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-6px) rotate(-0.5deg); }
+      40% { transform: translateX(6px) rotate(0.5deg); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+    }
+
+    #game-board.shake { animation: shake 0.3s ease-out; }
+  </style>
+</head>
+
+<body>
+  <div id="game-wrapper">
+    <div class="game-title">🐻 台灣黑熊過街 — Formosan Bear Crossing 🐻</div>
+
+    <!-- ===== HUD ===== -->
+    <div id="hud">
+      <span>
+        <span class="hud-label">生命</span>
+        <span id="lives-display" class="hud-value">❤️❤️❤️</span>
+      </span>
+      <span>
+        <span class="hud-label">分數</span>
+        <span id="score-display" class="hud-value">0</span>
+      </span>
+      <span>
+        <span class="hud-label">關卡</span>
+        <span id="level-display" class="hud-value">1</span>
+      </span>
+      <span>
+        <span class="hud-label">最高</span>
+        <span id="highscore-display" class="hud-value high-score">0</span>
+      </span>
+    </div>
+
+    <!-- ===== Game Board ===== -->
+    <div id="game-board">
+
+      <!-- Player (Bear) - rendered via SVG -->
+      <div id="player">
+        <div class="bear-inner">
+          <svg viewBox="0 0 40 40" width="40" height="40" xmlns="http://www.w3.org/2000/svg">
+            <!-- Ears -->
+            <circle cx="10" cy="7" r="7" fill="#1a1a1a"/>
+            <circle cx="30" cy="7" r="7" fill="#1a1a1a"/>
+            <circle cx="10" cy="7" r="4.5" fill="#3a3a3a"/>
+            <circle cx="30" cy="7" r="4.5" fill="#3a3a3a"/>
+            <!-- Body -->
+            <ellipse cx="20" cy="23" rx="15" ry="16" fill="#1a1a1a"/>
+            <!-- V Mark — Formosan black bear's signature! -->
+            <path d="M11 17 L20 30 L29 17" stroke="#F5DEB3" stroke-width="3.5" fill="none"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+            <!-- Eyes -->
+            <circle cx="14" cy="17" r="3" fill="white"/>
+            <circle cx="26" cy="17" r="3" fill="white"/>
+            <circle cx="14.8" cy="17" r="1.5" fill="#111"/>
+            <circle cx="26.8" cy="17" r="1.5" fill="#111"/>
+            <!-- Nose -->
+            <ellipse cx="20" cy="21" rx="3.5" ry="2.2" fill="#6D4C2A"/>
+            <ellipse cx="20" cy="20.5" rx="1.8" ry="1" fill="#333"/>
+            <!-- Mouth -->
+            <path d="M17.5 23 Q20 25.5 22.5 23" stroke="#444" stroke-width="0.8" fill="none"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- ===== Start Screen ===== -->
+      <div class="overlay" id="start-screen">
+        <h2>🐻 台灣黑熊過街</h2>
+        <div class="bear-showcase">
+          <svg viewBox="0 0 40 40" width="80" height="80" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="10" cy="7" r="7" fill="#1a1a1a"/>
+            <circle cx="30" cy="7" r="7" fill="#1a1a1a"/>
+            <circle cx="10" cy="7" r="4.5" fill="#3a3a3a"/>
+            <circle cx="30" cy="7" r="4.5" fill="#3a3a3a"/>
+            <ellipse cx="20" cy="23" rx="15" ry="16" fill="#1a1a1a"/>
+            <path d="M11 17 L20 30 L29 17" stroke="#F5DEB3" stroke-width="3.5" fill="none"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="14" cy="17" r="3" fill="white"/>
+            <circle cx="26" cy="17" r="3" fill="white"/>
+            <circle cx="14.8" cy="17" r="1.5" fill="#111"/>
+            <circle cx="26.8" cy="17" r="1.5" fill="#111"/>
+            <ellipse cx="20" cy="21" rx="3.5" ry="2.2" fill="#6D4C2A"/>
+            <ellipse cx="20" cy="20.5" rx="1.8" ry="1" fill="#333"/>
+            <path d="M17.5 23 Q20 25.5 22.5 23" stroke="#444" stroke-width="0.8" fill="none"/>
+          </svg>
+        </div>
+        <p style="font-size:1.2rem;color:#eee;">幫助台灣黑熊安全過街回到竹林！</p>
+        <div class="instructions">
+          <p>🎮 <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> 或 <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 移動</p>
+          <p>🚗 避開馬路上的車輛</p>
+          <p>🪵 踩上浮木才能渡河（別掉進水裡！）</p>
+          <p>🎋 到達上方 5 個竹林家園即過關</p>
+        </div>
+        <button class="btn"
+                hx-on:click="startGame()"
+                hx-swap="none">
+          🎮 開始遊戲
+        </button>
+        <p style="margin-top:8px;font-size:0.85rem;color:#666;">按 <kbd>Space</kbd> 或 <kbd>Enter</kbd> 開始</p>
+      </div>
+
+      <!-- ===== Game Over Screen ===== -->
+      <div class="overlay hidden" id="gameover-screen">
+        <h2>💀 遊戲結束！</h2>
+        <p>最終分數</p>
+        <p class="highlight" id="final-score">0</p>
+        <p id="new-highscore" style="color:#e94560;display:none">🏆 新紀錄！</p>
+        <button class="btn"
+                hx-on:click="startGame()"
+                hx-swap="none">
+          🔄 再玩一次
+        </button>
+      </div>
+
+      <!-- ===== Level Complete Screen ===== -->
+      <div class="overlay hidden" id="win-screen">
+        <h2>🎉 過關！</h2>
+        <p>關卡 <span id="cleared-level">1</span> 完成</p>
+        <p>目前分數</p>
+        <p class="highlight" id="win-score">0</p>
+        <button class="btn"
+                hx-on:click="nextLevel()"
+                hx-swap="none">
+          ➡️ 下一關
+        </button>
+      </div>
+    </div>
+
+    <!-- ===== Mobile Controls ===== -->
+    <div id="mobile-controls">
+      <div></div>
+      <button class="d-btn" ontouchstart="movePlayer(0,-1);event.preventDefault()">⬆</button>
+      <div></div>
+      <button class="d-btn" ontouchstart="movePlayer(-1,0);event.preventDefault()">⬅</button>
+      <button class="d-btn" ontouchstart="movePlayer(0,1);event.preventDefault()">⬇</button>
+      <button class="d-btn" ontouchstart="movePlayer(1,0);event.preventDefault()">➡</button>
+    </div>
+  </div>
+
+  <!-- ===== GAME ENGINE ===== -->
+  <script>
+  (function() {
+    'use strict';
+
+    // ===== Constants =====
+    const GAME_W   = 700;
+    const LANE_H   = 50;
+    const CELL      = 50;
+    const BEAR_SIZE = 40;
+    const BEAR_PAD  = (LANE_H - BEAR_SIZE) / 2;
+    const NUM_LANES = 11;
+
+    // Lane type constants
+    const GOAL  = 'goal';
+    const WATER = 'water';
+    const SAFE  = 'safe';
+    const ROAD  = 'road';
+    const START = 'start';
+
+    // ===== Lane Configurations =====
+    const LANE_DEFS = [
+      /* 0  */ { type: GOAL },
+      /* 1  */ { type: WATER, dir: 1,  speed: 0.9,  w: 130, gap: 180, emoji: '🪵',    css: 'obs-log'    },
+      /* 2  */ { type: WATER, dir:-1,  speed: 1.3,  w: 90,  gap: 155, emoji: '🐢🐢',  css: 'obs-turtle' },
+      /* 3  */ { type: WATER, dir: 1,  speed: 1.8,  w: 170, gap: 220, emoji: '🪵🪵',  css: 'obs-log'    },
+      /* 4  */ { type: SAFE },
+      /* 5  */ { type: ROAD, dir:-1,  speed: 1.4,  w: 70,  gap: 175, emoji: '🛵',    css: 'obs-scooter' },
+      /* 6  */ { type: ROAD, dir: 1,  speed: 1.0,  w: 90,  gap: 210, emoji: '🚗',    css: 'obs-car'     },
+      /* 7  */ { type: ROAD, dir:-1,  speed: 2.2,  w: 65,  gap: 155, emoji: '🏍️',    css: 'obs-moto'    },
+      /* 8  */ { type: ROAD, dir: 1,  speed: 0.8,  w: 140, gap: 240, emoji: '🚌',    css: 'obs-bus'     },
+      /* 9  */ { type: ROAD, dir:-1,  speed: 1.6,  w: 85,  gap: 195, emoji: '🚕',    css: 'obs-taxi'    },
+      /* 10 */ { type: START },
+    ];
+
+    // Goal home center X positions (5 homes across 700px)
+    const HOME_CX = [70, 210, 350, 490, 630];
+    const HOME_W  = 66;
+
+    // ===== DOM References =====
+    const board       = document.getElementById('game-board');
+    const playerEl    = document.getElementById('player');
+    const livesEl     = document.getElementById('lives-display');
+    const scoreEl     = document.getElementById('score-display');
+    const levelEl     = document.getElementById('level-display');
+    const highscoreEl = document.getElementById('highscore-display');
+
+    const startScreen    = document.getElementById('start-screen');
+    const gameoverScreen = document.getElementById('gameover-screen');
+    const winScreen      = document.getElementById('win-screen');
+
+    // ===== Game State =====
+    let state = {
+      running: false,
+      player: { x: 0, y: 0, laneIdx: 10 },
+      obstacles: [],      // Array of obstacle objects
+      goalHomes: [],       // Array of { cx, filled, el }
+      lives: 3,
+      score: 0,
+      level: 1,
+      highestRow: 10,     // Track furthest row for scoring
+      speedMul: 1,
+      lastTime: 0,
+      animId: null,
+      dying: false,
+    };
+
+    // ===== Initialization =====
+    function init() {
+      // Load high score
+      const hs = localStorage.getItem('bearCrossing_hs') || 0;
+      highscoreEl.textContent = hs;
+
+      createLanes();
+      createGoalHomes();
+      createObstacles();
+      resetPlayer();
+      updateHUD();
+    }
+
+    function createLanes() {
+      for (let i = 0; i < NUM_LANES; i++) {
+        const def = LANE_DEFS[i];
+        const lane = document.createElement('div');
+        lane.className = 'lane';
+        lane.style.top = (i * LANE_H) + 'px';
+
+        if (def.type === GOAL)  lane.classList.add('lane-goal');
+        if (def.type === WATER) lane.classList.add('lane-water');
+        if (def.type === SAFE)  lane.classList.add('lane-safe');
+        if (def.type === START) lane.classList.add('lane-start');
+        if (def.type === ROAD) {
+          lane.classList.add('lane-road');
+          const line = document.createElement('div');
+          line.className = 'lane-road-line';
+          lane.appendChild(line);
+        }
+
+        board.appendChild(lane);
+      }
+    }
+
+    function createGoalHomes() {
+      state.goalHomes = [];
+      // Remove old homes
+      board.querySelectorAll('.goal-home').forEach(el => el.remove());
+
+      for (const cx of HOME_CX) {
+        const el = document.createElement('div');
+        el.className = 'goal-home';
+        el.style.left = (cx - HOME_W / 2) + 'px';
+        el.innerHTML = '<span class="home-label">🎋</span>';
+        board.appendChild(el);
+
+        state.goalHomes.push({ cx, filled: false, el });
+      }
+    }
+
+    function createObstacles() {
+      // Remove old obstacle elements
+      board.querySelectorAll('.obstacle').forEach(el => el.remove());
+      state.obstacles = [];
+
+      for (let i = 0; i < NUM_LANES; i++) {
+        const def = LANE_DEFS[i];
+        if (def.type !== ROAD && def.type !== WATER) continue;
+
+        const unit = def.w + def.gap;
+        const count = Math.ceil(GAME_W / unit) + 2;
+
+        for (let j = 0; j < count; j++) {
+          const el = document.createElement('div');
+          el.className = `obstacle ${def.css}`;
+          el.style.width = def.w + 'px';
+          el.textContent = def.emoji;
+          board.appendChild(el);
+
+          const obs = {
+            x: j * unit,
+            w: def.w,
+            laneIdx: i,
+            speed: def.speed,
+            dir: def.dir,
+            type: def.type,
+            el,
+          };
+
+          state.obstacles.push(obs);
+        }
+      }
+    }
+
+    function resetPlayer() {
+      state.player.laneIdx = 10;
+      state.player.x = Math.floor(GAME_W / 2 / CELL) * CELL + (CELL - BEAR_SIZE) / 2;
+      state.player.y = state.player.laneIdx * LANE_H + BEAR_PAD;
+      state.highestRow = 10;
+      state.dying = false;
+      playerEl.className = '';
+      renderPlayer();
+    }
+
+    // ===== Player Movement =====
+    window.movePlayer = function(dx, dy) {
+      if (!state.running || state.dying) return;
+
+      const newX = state.player.x + dx * CELL;
+      const newLane = state.player.laneIdx + dy;
+
+      // Bounds check
+      if (newX < 0 || newX + BEAR_SIZE > GAME_W) return;
+      if (newLane < 0 || newLane >= NUM_LANES) return;
+
+      state.player.x = newX;
+      state.player.laneIdx = newLane;
+      state.player.y = newLane * LANE_H + BEAR_PAD;
+
+      // Forward progress scoring
+      if (newLane < state.highestRow) {
+        state.score += 10;
+        state.highestRow = newLane;
+        updateHUD();
+      }
+
+      // Hop animation
+      playerEl.classList.remove('hop');
+      void playerEl.offsetWidth; // Force reflow
+      playerEl.classList.add('hop');
+      playerEl.classList.add('moving');
+
+      renderPlayer();
+
+      setTimeout(() => playerEl.classList.remove('moving'), 120);
+    };
+
+    // ===== Keyboard Input =====
+    document.addEventListener('keydown', (e) => {
+      if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d','W','A','S','D'].includes(e.key)) {
+        e.preventDefault();
+      }
+
+      // Start/restart with Space or Enter
+      if (e.key === ' ' || e.key === 'Enter') {
+        e.preventDefault();
+        if (!startScreen.classList.contains('hidden')) {
+          startGame();
+        } else if (!gameoverScreen.classList.contains('hidden')) {
+          startGame();
+        } else if (!winScreen.classList.contains('hidden')) {
+          nextLevel();
+        }
+        return;
+      }
+
+      switch(e.key) {
+        case 'ArrowUp':    case 'w': case 'W': movePlayer(0, -1); break;
+        case 'ArrowDown':  case 's': case 'S': movePlayer(0,  1); break;
+        case 'ArrowLeft':  case 'a': case 'A': movePlayer(-1, 0); break;
+        case 'ArrowRight': case 'd': case 'D': movePlayer(1,  0); break;
+      }
+    });
+
+    // ===== Touch Swipe Support =====
+    let touchStartX = 0, touchStartY = 0;
+    board.addEventListener('touchstart', (e) => {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+
+    board.addEventListener('touchend', (e) => {
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      const dy = e.changedTouches[0].clientY - touchStartY;
+      const absDx = Math.abs(dx);
+      const absDy = Math.abs(dy);
+
+      if (Math.max(absDx, absDy) < 20) return; // Too small
+
+      if (absDx > absDy) {
+        movePlayer(dx > 0 ? 1 : -1, 0);
+      } else {
+        movePlayer(0, dy > 0 ? 1 : -1);
+      }
+    }, { passive: true });
+
+    // ===== Game Loop =====
+    function gameLoop(timestamp) {
+      if (!state.running) return;
+
+      const delta = state.lastTime === 0 ? 1 : Math.min((timestamp - state.lastTime) / 16.667, 3);
+      state.lastTime = timestamp;
+
+      updateObstacles(delta);
+      checkCollisions();
+      render();
+
+      state.animId = requestAnimationFrame(gameLoop);
+    }
+
+    function updateObstacles(delta) {
+      const spd = state.speedMul;
+
+      for (const obs of state.obstacles) {
+        obs.x += obs.speed * obs.dir * spd * delta;
+
+        // Wrap around
+        if (obs.dir === 1 && obs.x > GAME_W + 50) {
+          obs.x = -obs.w - 20;
+        } else if (obs.dir === -1 && obs.x + obs.w < -50) {
+          obs.x = GAME_W + 20;
+        }
+      }
+
+      // If bear is on a water lane and riding a log/turtle, move with it
+      if (!state.dying) {
+        const laneDef = LANE_DEFS[state.player.laneIdx];
+        if (laneDef.type === WATER) {
+          const laneObs = state.obstacles.filter(o => o.laneIdx === state.player.laneIdx);
+          const riding = laneObs.find(o => isOverlap(state.player.x, BEAR_SIZE, o.x, o.w));
+
+          if (riding) {
+            state.player.x += riding.speed * riding.dir * spd * delta;
+            // Off-screen death
+            if (state.player.x + BEAR_SIZE < -10 || state.player.x > GAME_W + 10) {
+              bearDie();
+            }
+          }
+          // Note: drowning check is in checkCollisions
+        }
+      }
+    }
+
+    function checkCollisions() {
+      if (state.dying) return;
+
+      const laneDef = LANE_DEFS[state.player.laneIdx];
+      const px = state.player.x;
+
+      if (laneDef.type === ROAD) {
+        // Collision with any vehicle = death
+        const laneObs = state.obstacles.filter(o => o.laneIdx === state.player.laneIdx);
+        for (const obs of laneObs) {
+          if (isOverlap(px, BEAR_SIZE, obs.x, obs.w)) {
+            bearDie();
+            return;
+          }
+        }
+      }
+
+      if (laneDef.type === WATER) {
+        // Must be ON an obstacle, otherwise drown
+        const laneObs = state.obstacles.filter(o => o.laneIdx === state.player.laneIdx);
+        const onSomething = laneObs.some(o => isOverlap(px + 5, BEAR_SIZE - 10, o.x, o.w));
+        if (!onSomething) {
+          bearDie();
+          return;
+        }
+      }
+
+      if (laneDef.type === GOAL) {
+        checkGoalHome();
+      }
+    }
+
+    function isOverlap(ax, aw, bx, bw) {
+      return ax + aw > bx + 4 && ax < bx + bw - 4;
+    }
+
+    function checkGoalHome() {
+      const bearCX = state.player.x + BEAR_SIZE / 2;
+
+      for (const home of state.goalHomes) {
+        if (home.filled) continue;
+        if (Math.abs(bearCX - home.cx) < HOME_W / 2) {
+          // Reached a home!
+          home.filled = true;
+          home.el.classList.add('filled');
+          home.el.innerHTML = '<svg viewBox="0 0 40 40" width="36" height="36" xmlns="http://www.w3.org/2000/svg">' +
+            '<circle cx="10" cy="7" r="7" fill="#1a1a1a"/><circle cx="30" cy="7" r="7" fill="#1a1a1a"/>' +
+            '<circle cx="10" cy="7" r="4.5" fill="#3a3a3a"/><circle cx="30" cy="7" r="4.5" fill="#3a3a3a"/>' +
+            '<ellipse cx="20" cy="23" rx="15" ry="16" fill="#1a1a1a"/>' +
+            '<path d="M11 17 L20 30 L29 17" stroke="#F5DEB3" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>' +
+            '<circle cx="14" cy="17" r="3" fill="white"/><circle cx="26" cy="17" r="3" fill="white"/>' +
+            '<circle cx="14.8" cy="17" r="1.5" fill="#111"/><circle cx="26.8" cy="17" r="1.5" fill="#111"/>' +
+            '<ellipse cx="20" cy="21" rx="3.5" ry="2.2" fill="#6D4C2A"/></svg>';
+
+          state.score += 200;
+          updateHUD();
+          resetPlayer();
+
+          // Check if all homes filled
+          if (state.goalHomes.every(h => h.filled)) {
+            levelComplete();
+          }
+          return;
+        }
+      }
+
+      // Not in a home slot — hit the wall between homes
+      bearDie();
+    }
+
+    // ===== Bear Death =====
+    function bearDie() {
+      if (state.dying) return;
+      state.dying = true;
+
+      playerEl.classList.add('dying');
+      board.classList.add('shake');
+
+      state.lives--;
+      updateHUD();
+
+      setTimeout(() => {
+        board.classList.remove('shake');
+        playerEl.classList.remove('dying');
+
+        if (state.lives <= 0) {
+          gameOver();
+        } else {
+          resetPlayer();
+          renderPlayer();
+        }
+      }, 700);
+    }
+
+    // ===== Game State Management =====
+    window.startGame = function() {
+      // Reset everything
+      state.lives = 3;
+      state.score = 0;
+      state.level = 1;
+      state.speedMul = 1;
+      state.dying = false;
+
+      createGoalHomes();
+      createObstacles();
+      resetPlayer();
+      updateHUD();
+
+      // Hide all overlays (HTMX-friendly: swap classes)
+      startScreen.classList.add('hidden');
+      gameoverScreen.classList.add('hidden');
+      winScreen.classList.add('hidden');
+
+      state.running = true;
+      state.lastTime = 0;
+      state.animId = requestAnimationFrame(gameLoop);
+
+      // Dispatch HTMX event for extensibility
+      htmx.trigger(board, 'game:started', { level: state.level });
+    };
+
+    function gameOver() {
+      state.running = false;
+      if (state.animId) cancelAnimationFrame(state.animId);
+
+      // High score check
+      const hs = parseInt(localStorage.getItem('bearCrossing_hs') || '0');
+      const newHs = state.score > hs;
+      if (newHs) {
+        localStorage.setItem('bearCrossing_hs', state.score);
+        highscoreEl.textContent = state.score;
+      }
+
+      document.getElementById('final-score').textContent = state.score;
+      document.getElementById('new-highscore').style.display = newHs ? 'block' : 'none';
+      gameoverScreen.classList.remove('hidden');
+
+      htmx.trigger(board, 'game:over', { score: state.score, newHighScore: newHs });
+    }
+
+    function levelComplete() {
+      state.running = false;
+      if (state.animId) cancelAnimationFrame(state.animId);
+
+      state.score += 1000; // Level bonus
+      updateHUD();
+
+      document.getElementById('cleared-level').textContent = state.level;
+      document.getElementById('win-score').textContent = state.score;
+      winScreen.classList.remove('hidden');
+
+      htmx.trigger(board, 'game:levelComplete', { level: state.level, score: state.score });
+    }
+
+    window.nextLevel = function() {
+      state.level++;
+      state.speedMul = 1 + (state.level - 1) * 0.18;
+
+      createGoalHomes();
+      createObstacles();
+      resetPlayer();
+      updateHUD();
+
+      winScreen.classList.add('hidden');
+
+      state.running = true;
+      state.lastTime = 0;
+      state.animId = requestAnimationFrame(gameLoop);
+
+      htmx.trigger(board, 'game:started', { level: state.level });
+    };
+
+    // ===== Rendering =====
+    function render() {
+      // Update obstacle positions
+      for (const obs of state.obstacles) {
+        obs.el.style.transform = `translateX(${obs.x}px)`;
+        obs.el.style.top = (obs.laneIdx * LANE_H + 6) + 'px';
+      }
+
+      renderPlayer();
+    }
+
+    function renderPlayer() {
+      playerEl.style.transform = `translate(${state.player.x}px, ${state.player.y}px)`;
+    }
+
+    function updateHUD() {
+      livesEl.textContent = '❤️'.repeat(Math.max(0, state.lives)) +
+                            '🖤'.repeat(Math.max(0, 3 - state.lives));
+      scoreEl.textContent = state.score;
+      levelEl.textContent = state.level;
+
+      const hs = parseInt(localStorage.getItem('bearCrossing_hs') || '0');
+      highscoreEl.textContent = Math.max(hs, state.score);
+    }
+
+    // ===== HTMX Event Listeners (for extensibility) =====
+    board.addEventListener('game:started', (e) => {
+      console.log('[HTMX Event] Game started:', e.detail);
+    });
+    board.addEventListener('game:over', (e) => {
+      console.log('[HTMX Event] Game over:', e.detail);
+    });
+    board.addEventListener('game:levelComplete', (e) => {
+      console.log('[HTMX Event] Level complete:', e.detail);
+    });
+
+    // ===== Audio (simple Web Audio beeps) =====
+    let audioCtx = null;
+    function beep(freq, dur, vol) {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.frequency.value = freq;
+        gain.gain.value = vol || 0.1;
+        osc.start();
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+        osc.stop(audioCtx.currentTime + dur);
+      } catch(e) { /* Audio not available */ }
+    }
+
+    // Override movePlayer to add sound
+    const _origMove = window.movePlayer;
+    window.movePlayer = function(dx, dy) {
+      const prevLane = state.player.laneIdx;
+      _origMove(dx, dy);
+      if (state.player.laneIdx !== prevLane || state.player.x !== state.player.x) {
+        beep(440, 0.05, 0.06);
+      }
+    };
+
+    // ===== Initialize =====
+    init();
+
+  })();
+  </script>
+</body>
+</html>
