@@ -79,6 +79,17 @@ bear-crossing/
 
 ---
 
+## 🤖 混搭模型協作開發 (Hybrid Multi-Model Collaboration)
+
+本專案實踐了前瞻的「**異質 AI 混搭結對工程 (Hybrid AI Multi-Model Pairing)**」，依據不同開發階段的任務特性靈活切換大語言模型，發揮各自的極致專長：
+
+| 開發階段 | 擔當模型 | 核心職責與貢獻 |
+| :--- | :--- | :--- |
+| **階段一：架構決策與深度盤點** | **Claude Opus 4.6 (Thinking)** | **深層推演與決策收斂**：主導 `/grill-me` 深度架構面試，從視覺尺寸、在地載具、音訊方案到專案結構，逐一走訪決策樹分支，精準界定中等升級 ⭐⭐⭐ 之技術邊界。 |
+| **階段二：規格建構與高速落地** | **Gemini 3.8 Flash (Medium)** | **敏捷規格與工程交付**：承接共識架構，一鍵產出標準 OpenSpec 工單（Proposal / Specs / Design / Tasks），並高速撰寫 5 大前端模組（Canvas 2D 像素引擎、瓦片系統、Web Audio 合成器）與 Git / GitHub Pages 自動化部署。 |
+
+---
+
 ## 🎨 素材來源與智慧財產權宣告 (Asset & Source Declarations)
 
 本遊戲以「**100% 純原生程式生成、零第三方外部靜態檔案依賴**」為核心原則，所有音畫資源均為程式碼動態生成：
@@ -96,12 +107,14 @@ bear-crossing/
 
 ---
 
-## 👥 共同作者 (Co-Authors)
+## 👥 共同作者與開發團隊 (Co-Authors & Team)
 
 - **Tonny Chiu** ([@tonnychiulab](https://github.com/tonnychiulab))  
   *專案發起人、產品方向、玩法機制設計與品質驗收*
 - **Antigravity** (Google DeepMind Advanced Agentic Assistant)  
-  *AI 結對程式設計助手、架構設計、規格制定與全端程式碼實作*
+  *AI 結對程式設計助手 (Hybrid Multi-Model Pair Programming)*
+  - 🧠 **Claude Opus 4.6 (Thinking)**：主導前期架構思考、決策樹推演與 `/grill-me` 深度面試對齊
+  - ⚡ **Gemini 3.8 Flash (Medium)**：主導中期 OpenSpec 規範建構、5 大模組實作落地與自動化部署
 
 ---
 
