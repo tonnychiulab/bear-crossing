@@ -1,7 +1,15 @@
 # 🐻 台灣黑熊過街 | Formosan Bear Crossing (Pixel Arcade)
 
+<p align="center">
+  <a href="./README.md"><b>繁體中文</b></a> |
+  <a href="./README.en.md"><b>English</b></a> |
+  <a href="./README.ja.md"><b>日本語</b></a>
+</p>
+
 > 一款以台灣特有亞種「台灣黑熊」為主角的 2D 像素復古街機過街網頁遊戲。  
 > 透過 **OpenSpec** 規格驅動開發，純原生 HTML5 Canvas 2D 渲染，零外部資源依賴。
+
+🎮 **[立即線上遊玩 (GitHub Pages)](https://tonnychiulab.github.io/bear-crossing/)**
 
 ---
 
