@@ -24,6 +24,20 @@
 
 ---
 
+## 📸 遊戲實機畫面 (Screenshots)
+
+| 開始畫面與玩法指引 | 市區道路 (Urban Street) |
+| :---: | :---: |
+| ![開始畫面](./docs/screenshots/screenshot_start.png) | ![市區道路](./docs/screenshots/screenshot_gameplay_urban.png) |
+| *復古街機彈窗與像素黑熊展示* | *機車瀑布、小黃計程車與車道紅綠燈管制* |
+
+| 山區道路 (Mountain Trail) | 秀姑巒溪 (River Rapids) |
+| :---: | :---: |
+| ![山區道路](./docs/screenshots/screenshot_gameplay_mountain.png) | ![秀姑巒溪](./docs/screenshots/screenshot_gameplay_rapids.png) |
+| *中橫碎石泥路、黃藍垃圾車與蜂蜜護盾光圈* | *湍急大溪流、烏龜定時下潛冒泡與浮木渡河* |
+
+---
+
 ## 🕹️ 操作方式
 
 | 操作按鍵 | 動作 |
