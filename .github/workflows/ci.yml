@@ -29,7 +29,7 @@ jobs:
           node -c js/game.js
 
       - name: Install OpenSpec CLI
-        run: npm install -g @openspec/cli
+        run: npm install -g @fission-ai/openspec
 
       - name: Validate OpenSpec Main Specs
         run: openspec validate --specs
