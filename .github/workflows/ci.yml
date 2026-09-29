@@ -1,0 +1,35 @@
+name: CI & Spec Guard
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate:
+    name: Syntax & OpenSpec Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Syntax Check (Node.js)
+        run: |
+          node -c js/sprites.js
+          node -c js/tilemap.js
+          node -c js/entities.js
+          node -c js/audio.js
+          node -c js/game.js
+
+      - name: Install OpenSpec CLI
+        run: npm install -g @openspec/cli
+
+      - name: Validate OpenSpec Main Specs
+        run: openspec validate --specs

@@ -19,9 +19,11 @@
   const startScreen = document.getElementById('start-screen');
   const winScreen = document.getElementById('win-screen');
   const gameoverScreen = document.getElementById('gameover-screen');
+  const pauseScreen = document.getElementById('pause-screen');
   const startBtn = document.getElementById('start-btn');
   const nextLevelBtn = document.getElementById('next-level-btn');
   const restartBtn = document.getElementById('restart-btn');
+  const resumeBtn = document.getElementById('resume-btn');
   const shareBtn = document.getElementById('share-btn');
   const copyToast = document.getElementById('copy-toast');
   const previewCanvas = document.getElementById('preview-bear-canvas');
@@ -41,6 +43,7 @@
   // 遊戲狀態物件
   const state = {
     running: false,
+    isPaused: false,
     player: new window.BearEntities.Player(),
     vehicles: [],
     riverEntities: [],
@@ -139,7 +142,9 @@
     startScreen.classList.add('hidden');
     winScreen.classList.add('hidden');
     gameoverScreen.classList.add('hidden');
+    if (pauseScreen) pauseScreen.classList.add('hidden');
 
+    state.isPaused = false;
     state.running = true;
     state.lastTimestamp = performance.now();
     if (state.animId) cancelAnimationFrame(state.animId);
@@ -148,6 +153,8 @@
 
   function nextLevel() {
     winScreen.classList.add('hidden');
+    if (pauseScreen) pauseScreen.classList.add('hidden');
+    state.isPaused = false;
     startLevel(state.level + 1);
     state.running = true;
     state.lastTimestamp = performance.now();
@@ -156,6 +163,7 @@
 
   function levelComplete() {
     state.running = false;
+    state.isPaused = false;
     if (state.animId) cancelAnimationFrame(state.animId);
     window.BearAudio.stopBgm();
     window.BearAudio.playWin();
@@ -170,6 +178,7 @@
 
   function gameOver() {
     state.running = false;
+    state.isPaused = false;
     if (state.animId) cancelAnimationFrame(state.animId);
     window.BearAudio.stopBgm();
 
@@ -178,6 +187,32 @@
     const badge = document.getElementById('new-highscore-badge');
     badge.style.display = isNewHigh ? 'block' : 'none';
     gameoverScreen.classList.remove('hidden');
+  }
+
+  // 暫停與恢復生命週期
+  function pauseGame() {
+    if (!state.running || state.isPaused || state.player.isDying) return;
+    state.isPaused = true;
+    if (state.animId) {
+      cancelAnimationFrame(state.animId);
+      state.animId = null;
+    }
+    window.BearAudio.pauseAudio();
+    if (pauseScreen) {
+      pauseScreen.classList.remove('hidden');
+    }
+  }
+
+  function resumeGame() {
+    if (!state.isPaused) return;
+    state.isPaused = false;
+    if (pauseScreen) {
+      pauseScreen.classList.add('hidden');
+    }
+    window.BearAudio.resumeAudio();
+    state.lastTimestamp = performance.now();
+    if (state.animId) cancelAnimationFrame(state.animId);
+    state.animId = requestAnimationFrame(gameLoop);
   }
 
   function handleBearDie() {
@@ -201,7 +236,7 @@
 
   // 玩家移動與得分
   function movePlayer(dx, dy) {
-    if (!state.running || state.player.isDying) return;
+    if (!state.running || state.isPaused || state.player.isDying) return;
     const moved = state.player.move(dx, dy);
     if (moved) {
       window.BearAudio.playJump();
@@ -215,7 +250,7 @@
 
   // ===== 主遊戲迴圈 =====
   function gameLoop(timestamp) {
-    if (!state.running) return;
+    if (!state.running || state.isPaused) return;
 
     const delta = Math.min((timestamp - state.lastTimestamp) / 1000, 0.1);
     state.lastTimestamp = timestamp;
@@ -444,12 +479,24 @@
 
       if (e.key === ' ' || e.key === 'Enter') {
         e.preventDefault();
-        if (!startScreen.classList.contains('hidden')) {
+        if (state.isPaused) {
+          resumeGame();
+        } else if (!startScreen.classList.contains('hidden')) {
           startGame();
         } else if (!gameoverScreen.classList.contains('hidden')) {
           startGame();
         } else if (!winScreen.classList.contains('hidden')) {
           nextLevel();
+        }
+        return;
+      }
+
+      if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') {
+        e.preventDefault();
+        if (state.isPaused) {
+          resumeGame();
+        } else if (state.running && !state.player.isDying && winScreen.classList.contains('hidden') && gameoverScreen.classList.contains('hidden')) {
+          pauseGame();
         }
         return;
       }
@@ -485,22 +532,40 @@
       }
     }, { passive: true });
 
-    // 手機端虛擬按鈕
-    document.getElementById('btn-up').addEventListener('click', () => movePlayer(0, -1));
-    document.getElementById('btn-down').addEventListener('click', () => movePlayer(0, 1));
-    document.getElementById('btn-left').addEventListener('click', () => movePlayer(-1, 0));
-    document.getElementById('btn-right').addEventListener('click', () => movePlayer(1, 0));
+    // 手機端虛擬按鈕（PointerDown 零延遲觸發並阻止手勢默認行為）
+    const bindDpad = (id, dx, dy) => {
+      const btn = document.getElementById(id);
+      if (!btn) return;
+      btn.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        movePlayer(dx, dy);
+      });
+    };
+    bindDpad('btn-up', 0, -1);
+    bindDpad('btn-down', 0, 1);
+    bindDpad('btn-left', -1, 0);
+    bindDpad('btn-right', 1, 0);
 
     // 按鈕點擊
     startBtn.addEventListener('click', startGame);
     nextLevelBtn.addEventListener('click', nextLevel);
     restartBtn.addEventListener('click', startGame);
+    if (resumeBtn) resumeBtn.addEventListener('click', resumeGame);
     shareBtn.addEventListener('click', copyShareScore);
 
     // 靜音切換按鈕
     muteBtn.addEventListener('click', () => {
       const muted = window.BearAudio.toggleMute();
       muteBtn.textContent = muted ? '🔇' : '🔊';
+    });
+
+    // 頁面生命週期（visibilitychange 防護）
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        if (state.running && !state.player.isDying && winScreen.classList.contains('hidden') && gameoverScreen.classList.contains('hidden')) {
+          pauseGame();
+        }
+      }
     });
   }
 

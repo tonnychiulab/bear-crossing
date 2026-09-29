@@ -307,6 +307,9 @@ body {
   align-items: center;
   justify-content: center;
   touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
   transition: background 0.1s, transform 0.1s;
 }
 

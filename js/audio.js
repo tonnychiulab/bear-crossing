@@ -252,6 +252,26 @@ window.BearAudio = (function() {
     currentTheme = null;
   }
 
+  // 頁面生命週期音訊暫停與恢復
+  function pauseAudio() {
+    if (bgmTimer) {
+      clearTimeout(bgmTimer);
+      bgmTimer = null;
+    }
+    if (ctx && ctx.state === 'running') {
+      ctx.suspend().catch(() => {});
+    }
+  }
+
+  function resumeAudio() {
+    if (ctx && ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
+    if (currentTheme && !bgmTimer) {
+      playNextBgmNote();
+    }
+  }
+
   return {
     ensureContext: ensureContext,
     toggleMute: toggleMute,
@@ -263,6 +283,8 @@ window.BearAudio = (function() {
     playSplash: playSplash,
     playWin: playWin,
     startBgm: startBgm,
-    stopBgm: stopBgm
+    stopBgm: stopBgm,
+    pauseAudio: pauseAudio,
+    resumeAudio: resumeAudio
   };
 })();
