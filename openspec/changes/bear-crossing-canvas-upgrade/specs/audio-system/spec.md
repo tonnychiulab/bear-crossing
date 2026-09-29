@@ -27,3 +27,7 @@
 #### Scenario: Audio mute toggle
 - **WHEN** 玩家點擊遊戲介面之靜音按鈕
 - **THEN** 系統將主增益節點（Master Gain）平滑調降至 0，暫停所有背景音樂與音效輸出
+
+#### Scenario: Audio unmute toggle and BGM resume
+- **WHEN** 玩家再次點擊靜音按鈕以取消靜音
+- **THEN** 系統將主增益節點（Master Gain）平滑調回預設音量，並確保當前關卡背景音樂無縫恢復播放，不發生排程永久中斷

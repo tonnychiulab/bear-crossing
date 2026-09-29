@@ -162,10 +162,18 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   z-index: 100;
   backdrop-filter: blur(6px);
-  padding: 24px;
+  padding: 20px 16px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
+}
+
+.overlay::before,
+.overlay::after {
+  content: '';
+  margin: auto;
 }
 
 .overlay.hidden {
@@ -326,5 +334,36 @@ body {
   }
   .hud-value {
     font-size: 1rem;
+  }
+  .overlay {
+    padding: 10px 8px;
+  }
+  .overlay h2 {
+    font-size: 1.25rem;
+    margin-bottom: 4px;
+  }
+  .bear-preview-box {
+    margin: 4px 0;
+  }
+  .bear-preview-box canvas {
+    width: 44px;
+    height: 44px;
+  }
+  .overlay p {
+    font-size: 0.82rem;
+    margin: 2px 0;
+  }
+  .instructions-box {
+    padding: 6px 10px;
+    margin: 6px 0;
+    line-height: 1.4;
+    font-size: 0.75rem;
+  }
+  .instructions-box p {
+    margin: 2px 0;
+  }
+  .btn {
+    padding: 8px 18px;
+    font-size: 0.95rem;
   }
 }

@@ -34,3 +34,12 @@
 - [x] 6.1 實作 `js/game.js` 主遊戲迴圈（`requestAnimationFrame`），整合 60FPS 狀態更新、碰撞檢測與 Canvas 繪圖渲染
 - [x] 6.2 實作遊戲狀態機（StartScreen、Playing、LevelComplete、GameOver），串接關卡輪轉加成與 localStorage 最高分更新
 - [x] 6.3 在 Game Over 結算彈窗實作「一鍵複製戰績」按鈕，格式化輸出含 Emoji 的分數圖文至剪貼簿並顯示回饋提示
+
+## 7. 玩家反饋與邊界缺陷綜合修復 (Community Feedback & Polish)
+
+- [x] 7.1 修復 Issue #2 & #7：調整 `css/style.css`，為 `.overlay` 加入 `overflow-y: auto` 與滾動支援，微調手機斷點排版，確保窄螢幕下開始、過關與結算畫面可完整檢視與點擊按鈕
+- [x] 7.2 修復 Issue #4：調整 `js/audio.js`，避免 BGM 音符排程因 `isMuted` 徹底斷鏈，並確保取消靜音時背景音樂能順暢恢復播放
+- [x] 7.3 修復 Issue #3：在 `js/entities.js` 與 `js/game.js` 實作蜂蜜護盾破裂後的 1.0 秒無敵幀（含受擊閃爍）與安全位置邏輯，並將水域漂出邊界納入護盾保護判定
+- [x] 7.4 修復 Issue #1：重構 `js/entities.js` 載具與黑熊的碰撞判定箱，依車種配置專屬水平內縮量（`hitboxPadding`），打造 80%~85% Near-Miss 擦身寬容度
+- [x] 7.5 修復 Issue #5：修改 `js/game.js`，將分享文字連結更正為 `https://tonnychiulab.github.io/bear-crossing/`，並在備援複製中檢查 `execCommand` 狀態，失敗時彈出選取框供手動複製
+- [x] 7.6 修復 Issue #6：更新 OpenSpec 規格文件（`gameplay-mechanics/spec.md` 與 `audio-system/spec.md`），確認竹筍時間為 6 秒、標記河流漩渦為待實作特性，並通過 OpenSpec 驗證

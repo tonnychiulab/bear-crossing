@@ -268,16 +268,20 @@
 
       // 1. 車道碰撞檢測
       if (currentLane.type === window.BearTilemap.TYPE.ROAD) {
-        for (const v of state.vehicles) {
-          if (v.laneIdx === state.player.laneIdx && v.checkCollision(state.player)) {
-            if (state.player.hasShield) {
-              // 護盾吸收碰撞
-              state.player.hasShield = false;
-              window.BearAudio.playShieldBreak();
-            } else {
-              window.BearAudio.playCrash();
-              handleBearDie();
-              return;
+        if (state.player.invincibleTimer <= 0) {
+          for (const v of state.vehicles) {
+            if (v.laneIdx === state.player.laneIdx && v.checkCollision(state.player)) {
+              if (state.player.hasShield) {
+                // 護盾吸收碰撞，提供 1.0 秒無敵閃爍時間脫離危險
+                state.player.hasShield = false;
+                state.player.invincibleTimer = 1.0;
+                window.BearAudio.playShieldBreak();
+                break;
+              } else {
+                window.BearAudio.playCrash();
+                handleBearDie();
+                return;
+              }
             }
           }
         }
@@ -295,20 +299,17 @@
           }
         }
 
-        // 漂出畫面邊界或落水
-        if (state.player.x < -10 || state.player.x + state.player.w > window.BearTilemap.GAME_W + 10) {
-          window.BearAudio.playSplash();
-          handleBearDie();
-          return;
-        }
-
-        if (!isCarried) {
+        // 漂出畫面邊界或落水判定
+        const isOffscreen = state.player.x < -10 || state.player.x + state.player.w > window.BearTilemap.GAME_W + 10;
+        if (isOffscreen || !isCarried) {
           if (state.player.hasShield) {
+            // 護盾吸收意外，破盾並安全送回中間安全島 (Lane 4)
             state.player.hasShield = false;
+            state.player.invincibleTimer = 1.0;
             window.BearAudio.playShieldBreak();
-            // 被水推回起點安全行
             state.player.laneIdx = 4;
             state.player.y = 4 * window.BearTilemap.LANE_H + 9;
+            state.player.x = Math.max(20, Math.min(window.BearTilemap.GAME_W - 52, state.player.x));
           } else {
             window.BearAudio.playSplash();
             handleBearDie();
@@ -386,11 +387,12 @@
   // 社交戰績分享
   function copyShareScore() {
     const theme = window.BearTilemap.getTheme(state.level);
-    const shareText = `🐻 我在《台灣黑熊過街》闖到第 ${state.level} 關【${theme.name}】！得分 ${state.score} 分 🎋 快來避開機車與湍急溪流挑戰我！ https://github.com`;
+    const gameUrl = window.location.href.startsWith('http') ? window.location.href : 'https://tonnychiulab.github.io/bear-crossing/';
+    const shareText = `🐻 我在《台灣黑熊過街》闖到第 ${state.level} 關【${theme.name}】！得分 ${state.score} 分 🎋 快來避開機車與湍急溪流挑戰我！ ${gameUrl}`;
 
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(shareText).then(() => {
-        showToast();
+        showToast('已複製戰績到剪貼簿！✨');
       }).catch(() => {
         fallbackCopy(shareText);
       });
@@ -402,16 +404,30 @@
   function fallbackCopy(text) {
     const ta = document.createElement('textarea');
     ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    ta.style.top = '0';
     document.body.appendChild(ta);
+    ta.focus();
     ta.select();
+    let successful = false;
     try {
-      document.execCommand('copy');
-      showToast();
-    } catch(e) {}
+      successful = document.execCommand('copy');
+    } catch(e) {
+      successful = false;
+    }
     document.body.removeChild(ta);
+
+    if (successful) {
+      showToast('已複製戰績到剪貼簿！✨');
+    } else {
+      // 複製失敗時提供手動複製輸入框
+      prompt('請手動選取並複製戰績：', text);
+    }
   }
 
-  function showToast() {
+  function showToast(msg) {
+    if (msg) copyToast.textContent = msg;
     copyToast.style.display = 'block';
     setTimeout(() => {
       copyToast.style.display = 'none';

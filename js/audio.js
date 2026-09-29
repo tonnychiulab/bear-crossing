@@ -35,6 +35,9 @@ window.BearAudio = (function() {
       const target = isMuted ? 0 : 0.25;
       masterGain.gain.setTargetAtTime(target, ctx.currentTime, 0.05);
     }
+    if (!isMuted && currentTheme && !bgmTimer) {
+      playNextBgmNote();
+    }
     return isMuted;
   }
 
@@ -207,26 +210,28 @@ window.BearAudio = (function() {
   };
 
   function playNextBgmNote() {
-    if (!ctx || isMuted || !currentTheme) return;
+    if (!ctx || !currentTheme) return;
     const melody = MELODIES[currentTheme] || MELODIES.urban;
     const note = melody[noteIndex % melody.length];
     noteIndex++;
 
-    const t = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
+    if (!isMuted && masterGain) {
+      const t = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
 
-    osc.type = 'square';
-    osc.frequency.setValueAtTime(note.f, t);
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(note.f, t);
 
-    gain.gain.setValueAtTime(0.08, t);
-    gain.gain.exponentialRampToValueAtTime(0.005, t + note.d * 0.9);
+      gain.gain.setValueAtTime(0.08, t);
+      gain.gain.exponentialRampToValueAtTime(0.005, t + note.d * 0.9);
 
-    osc.connect(gain);
-    gain.connect(masterGain);
+      osc.connect(gain);
+      gain.connect(masterGain);
 
-    osc.start(t);
-    osc.stop(t + note.d);
+      osc.start(t);
+      osc.stop(t + note.d);
+    }
 
     bgmTimer = setTimeout(playNextBgmNote, note.d * 1000);
   }
@@ -244,6 +249,7 @@ window.BearAudio = (function() {
       clearTimeout(bgmTimer);
       bgmTimer = null;
     }
+    currentTheme = null;
   }
 
   return {

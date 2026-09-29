@@ -31,6 +31,7 @@ window.BearEntities = (function() {
       // 道具狀態
       this.hasShield = false;
       this.speedBoostTimer = 0;
+      this.invincibleTimer = 0;
       this.lastMoveTime = -1000;
     }
 
@@ -62,6 +63,11 @@ window.BearEntities = (function() {
       // 道具加速時間倒數
       if (this.speedBoostTimer > 0) {
         this.speedBoostTimer = Math.max(0, this.speedBoostTimer - delta);
+      }
+
+      // 無敵幀倒數
+      if (this.invincibleTimer > 0) {
+        this.invincibleTimer = Math.max(0, this.invincibleTimer - delta);
       }
 
       // 跳躍動作計時
@@ -108,6 +114,13 @@ window.BearEntities = (function() {
         ctx.arc(centerX, centerY, 22, 0, Math.PI * 2);
         ctx.stroke();
         ctx.shadowBlur = 0;
+      }
+
+      // 受擊無敵閃爍
+      if (this.invincibleTimer > 0) {
+        if (Math.floor(this.invincibleTimer * 12) % 2 === 0) {
+          ctx.globalAlpha = 0.35;
+        }
       }
 
       // 跳躍彈跳縮放效果
@@ -176,14 +189,32 @@ window.BearEntities = (function() {
       ctx.restore();
     }
 
-    // AABB 碰撞檢測（內縮 4px 容錯）
+    // 依載具種類配置水平/垂直內縮量（80%~85% 實體像素判定，提供街機 Near-Miss 擦身寬容度）
+    getHitboxPadding() {
+      switch (this.spriteKey) {
+        case 'scooter':
+          return { padX: 7, padY: 4 };
+        case 'taxi':
+          return { padX: 8, padY: 4 };
+        case 'bus':
+        case 'truck':
+          return { padX: 9, padY: 4 };
+        default:
+          return { padX: 6, padY: 4 };
+      }
+    }
+
+    // AABB 碰撞檢測（實體核心判定 + 黑熊軀幹容錯）
     checkCollision(player) {
-      const pad = 4;
+      const { padX, padY } = this.getHitboxPadding();
+      const playerPadX = 5;
+      const playerPadY = 4;
+
       return (
-        player.x + player.w - pad > this.x + pad &&
-        player.x + pad < this.x + this.w - pad &&
-        player.y + player.h - pad > this.y + pad &&
-        player.y + pad < this.y + this.h - pad
+        player.x + player.w - playerPadX > this.x + padX &&
+        player.x + playerPadX < this.x + this.w - padX &&
+        player.y + player.h - playerPadY > this.y + padY &&
+        player.y + playerPadY < this.y + this.h - padY
       );
     }
   }

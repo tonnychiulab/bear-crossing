@@ -33,18 +33,18 @@
 
 #### Scenario: Collecting bamboo shoot
 - **WHEN** 黑熊移動至含有竹筍道具之座標
-- **THEN** 系統移除該道具、增加得分，並在 5 秒內使黑熊每次移動之動畫延遲減半並提升流暢度
+- **THEN** 系統移除該道具、增加得分，並在 6 秒內使黑熊每次移動之動畫延遲減半並提升流暢度
 
 #### Scenario: Collecting honey shield
 - **WHEN** 黑熊移動至含有蜂蜜道具之座標
 - **THEN** 系統啟動單次防護罩狀態，在黑熊周圍渲染蜂巢光圈特效
 
 #### Scenario: Shield absorbing fatal hit
-- **WHEN** 具有蜂蜜防護罩之黑熊遭受車輛撞擊
-- **THEN** 防護罩破裂消失，黑熊維持存活而不扣除生命值
+- **WHEN** 具有蜂蜜防護罩之黑熊遭受車輛撞擊或落水意外
+- **THEN** 防護罩破裂消失，黑熊維持存活而不扣除生命值，並獲得 1.0 秒無敵幀（含閃爍回饋）以安全脫離車道；若於水域則安全送回前一安全島
 
 ### Requirement: Dynamic Hazards and River Mechanics
-關卡 SHALL 包含動態障礙物機制，包含車道紅綠燈暫停、河流漩渦以及定時沉沒之潛水烏龜。
+關卡 SHALL 包含動態障礙物機制，包含車道紅綠燈暫停以及定時沉沒之潛水烏龜。（註：河流漩渦 Whirlpool 規劃於後續擴充版本實作）。
 
 #### Scenario: Traffic light vehicle stop
 - **WHEN** 市區道路之紅綠燈號切換為紅燈
@@ -56,11 +56,18 @@
 
 #### Scenario: River log riding
 - **WHEN** 黑熊跳上水平漂流之浮木
-- **THEN** 黑熊座標隨浮木速度同向平移；若漂流超出畫面邊界則判定死亡
+- **THEN** 黑熊座標隨浮木速度同向平移；若漂流超出畫面邊界則觸發落水判定（若具護盾則破盾並回送安全島）
+
+### Requirement: Obstacle Collision Box and Near-Miss Forgiveness
+載具障礙物與黑熊 SHALL 具備專屬的碰撞判定邊界內縮（Hitbox Padding），提供約 80%~85% 視覺容錯寬容度，實現驚險「擦身而過」之街機體驗。
+
+#### Scenario: Near-miss vehicle pass
+- **WHEN** 黑熊邊界與車輛視覺透明留白重疊但在車輛實體核心碰撞箱之外
+- **THEN** 系統不判定碰撞，允許黑熊安全穿梭
 
 ### Requirement: Score Persistence and Shareable Summary
 遊戲結束時系統 SHALL 更新本地最高分數，並提供格式化文字之「一鍵複製」按鈕供社群分享。
 
 #### Scenario: Copying game result to clipboard
 - **WHEN** 玩家在 Game Over 結算畫面點擊「複製戰績」按鈕
-- **THEN** 系統將包含遊戲標題、通關關卡數、最終得分與 Emoji 圖案之文字寫入剪貼簿，並顯示複製成功提示
+- **THEN** 系統將包含遊戲標題、通關關卡數、最終得分、Emoji 與官方遊戲連結（https://tonnychiulab.github.io/bear-crossing/）之文字寫入剪貼簿；若寫入失敗則提供手動複製選項
